@@ -1,0 +1,234 @@
+<!doctype html>
+<html>
+
+<head>
+	<meta charset="utf-8" />
+	<title>Test</title>
+	<script src="https://code.jquery.com/jquery-3.3.1.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/vis/4.21.0/vis.min.js"></script>
+	
+	<link href="https://cdnjs.cloudflare.com/ajax/libs/vis/4.21.0/vis.min.css" rel="stylesheet" type="text/css" />
+	<style type="text/css">
+    body {
+      font: 10pt sans;
+    }
+    #adr-graph {
+      width: 800px;
+      height: 500px;
+    }
+  </style>
+</head>
+
+<body>
+<!TODO: Input field>
+
+	<input type="text" name="repo" id="apple" placeholder="Enter GIT repository">
+	<button type="button" id="doit">Blubb</button>
+	<div id="adr-graph" hidden="hidden"></div>
+	<h3>Contents of the file:</h3>
+	<pre id="file-content"></pre>
+	
+
+	<script type="text/javascript">
+	
+	/* 
+	* get directory listing : 
+		curl -H "Accept: application/vnd.github.v3+json" https://raw.githubusercontent.com/adr/madr/master/docs/adr
+
+	* get raw md (url from listing):
+		curl -H "Accept: application/vnd.github.v3.raw+json" <url>
+		e.g.:
+		curl -H "Accept: application/vnd.github.v3.raw+json" https://raw.githubusercontent.com/adr/madr/master/docs/adr/0011-use-asterisk-as-list-marker.md
+	*/
+	
+	
+	
+		function readUrl(e) {
+			var adrs = [];
+
+			function getAdrTitle(lines) {
+				var titlePattern = new RegExp('^#\\s');
+				var result = "";
+				if (lines[0] && titlePattern.test(lines[0])) {
+					result = lines[0].substring(2);
+				}
+				return result;
+			}
+			
+			function getAdrLinks(lines) {
+				var result = [];
+				var linkStartPattern = new RegExp('^## Links');
+				var linkPattern = new RegExp ('^\\* (\\w+) \\[.*\\]\\((\\d+)-.*\\)')
+				var size = lines.length;
+				var banana = false;
+				var i = 0;
+				while (!banana && i != size) {
+					banana = linkStartPattern.test(lines[i]);
+					i++;
+				}
+				if (i != size) {
+					var linkLines = lines.slice(i);
+					for (var j = 0 ; j < linkLines.length ; j++) {
+						var match = linkPattern.exec(linkLines[j])
+						if (match) {
+							var link = {
+								relation: match[1],
+								target: parseInt(match[2], 10)
+							};
+							result.push(link)
+						}
+					}
+				}
+				return result;
+			}
+			
+			function getAdrId(url) {
+				var idPattern = new RegExp('.*/(\\d+)-.*md$');
+				var match = idPattern.exec(url);
+				return match && match[1] && parseInt(match[1], 10) || 0;
+			}
+			//TODO: RootUrl -> cleaned/mapped Input from Input field
+			//https://github.com/adr/madr/tree/master/docs/adr
+			//var adrRootUrl = 'https://api.github.com/repos/adr/madr/contents/docs/adr';
+			var cleanInput = new RegExp ('https://github.com/(.*)/(.*)/.*/.*/(.*)/(.*)')
+			var input = document.getElementById('apple').value
+			var inputMatches = cleanInput.exec(input) //input wo??
+			var adrRootUrl = 'https://api.github.com/repos/'+ inputMatches[1]+'/' + inputMatches[2]+'/' + 'contents/' + inputMatches[3]+'/' + inputMatches[4]
+			var bodyLocations = [];
+			
+			function displayText () {
+				var element = document.getElementById('file-content');
+				var displayText = "";
+				for (var k=0; k< adrs.length; k++) {
+					var adr = adrs[k];
+					displayText += 'Id: ' + adr.id + '\n';
+					displayText += 'Title: ' + adr.title + '\n';
+					if (adr.links.length > 0) {
+						displayText += 'Links: \n'
+						for (var i = 0; i < adr.links.length ; i++) {
+							var link = adr.links[i];
+							displayText += link.target + '=' + link.relation + '\n';
+						}
+					} else {
+						displayText += "No links" + '\n';
+					}
+					displayText += '\n';
+				}
+				element.textContent = displayText;
+			}
+			
+			function renderGraph() {
+				var nodeData = [];
+				var edgeData = [];
+
+				for (var i = 0; i < adrs.length; i++) {
+					var adr = adrs[i];
+					var node = {
+						id: adr.id,
+						label: adr.title,
+						shape: 'square',				
+						url: adr.url
+					};
+					nodeData.push(node);
+					if (adr.links) {
+						for (var k = 0; k < adr.links.length; k++) {
+							var link = adr.links[k];
+							var edge = {
+								from: adr.id,
+								to:	link.target,
+								label: link.relation
+							};
+							edgeData.push(edge);
+						}
+					}
+				}
+
+				var nodes = new vis.DataSet(nodeData);
+				var edges = new vis.DataSet(edgeData);
+				var container = document.getElementById('adr-graph');
+				var data = {
+					nodes: nodes,
+					edges: edges
+				};
+				var options = {};
+				var network = new vis.Network(container, data, options);
+				$( "#adr-graph" ).show();
+				
+				network.on("selectNode", function (params) {
+					if (params.nodes.length === 1) {
+						var node = nodes.get(params.nodes[0]);
+						window.open(node.url, '_blank');
+					}
+					});
+			}
+			
+			function displayContents(size) {
+				return function() {
+					if (size == adrs.length ) {
+						displayText();
+						renderGraph();
+					}
+				};
+			}
+
+			function getSingleAdr(myUrl, callback) {
+				var handleResponse = function(data) {
+					var result = {};
+					var dataLines = data.split('\n');
+					result.url = myUrl;
+					result.id = getAdrId(myUrl);
+					result.title = getAdrTitle(dataLines);
+					result.links = getAdrLinks(dataLines);
+					adrs.push(result);
+				};
+				$.ajax({
+					url: myUrl,
+					type: 'get',
+					dataType: 'text',
+					success: handleResponse
+				}).always(callback);
+			}
+			
+			function loadDocsContent () {
+				for (var l = 0; l < bodyLocations.length; l++) {
+					var callback = displayContents(bodyLocations.length);
+					getSingleAdr(bodyLocations[l], callback);
+				}
+			}
+			
+			function loadAdrList () {
+				var handleResponse = function(data) {
+					var idPattern = new RegExp('.*/(\\d+)-.*');
+					var result = [];
+					if (data) {
+						for ( var i = 0; i < data.length ; i++) {
+							if (data[i] && data[i].download_url && idPattern.test(data[i].download_url)) {
+								result.push(data[i].download_url);
+							}
+						}
+					}
+					bodyLocations = result;
+				};
+				var handleError = function() {console.log("sad panda");};
+				$.ajax({
+					url: adrRootUrl,
+					type: 'get',
+					contentType: 'application/vnd.github.v3.raw+json; charset=UTF-8',
+					dataType: 'json',
+					success: handleResponse
+				}).done(loadDocsContent).fail(handleError);
+			
+			}
+			
+			loadAdrList();
+			
+		}
+
+
+
+		document.getElementById('doit')
+			.addEventListener('click', readUrl, false);
+	</script>
+</body>
+
+</html>
