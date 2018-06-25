@@ -20,18 +20,19 @@
 </head>
 
 <body>
-<!TODO: Input field>
-
-	<input type="text" name="repo" id="apple" placeholder="Enter GIT repository">
+	<input type="text" name="owner" id="apple" placeholder="JabRef | eclipse">
+	<input type="text" name="repo" id="tomato" placeholder="jabref | winery">
 	<button type="button" id="doit">Blubb</button>
 	<div id="adr-graph" hidden="hidden"></div>
-	<h3>Contents of the file:</h3>
 	<pre id="file-content"></pre>
 	
 
 	<script type="text/javascript">
 	
 	/* 
+	winery: https://github.com/eclipse/winery/tree/master/docs/adr
+	jabref: https://github.com/JabRef/jabref/tree/master/docs/adr
+	gadr-demo: https://github.com/snisnisniksonah/gadr-demo/tree/master/docs/adr
 	* get directory listing : 
 		curl -H "Accept: application/vnd.github.v3+json" https://raw.githubusercontent.com/adr/madr/master/docs/adr
 
@@ -90,10 +91,11 @@
 			//TODO: RootUrl -> cleaned/mapped Input from Input field
 			//https://github.com/adr/madr/tree/master/docs/adr
 			//var adrRootUrl = 'https://api.github.com/repos/adr/madr/contents/docs/adr';
-			var cleanInput = new RegExp ('https://github.com/(.*)/(.*)/.*/.*/(.*)/(.*)')
-			var input = document.getElementById('apple').value
-			var inputMatches = cleanInput.exec(input) //input wo??
-			var adrRootUrl = 'https://api.github.com/repos/'+ inputMatches[1]+'/' + inputMatches[2]+'/' + 'contents/' + inputMatches[3]+'/' + inputMatches[4]
+			//var cleanInput = new RegExp ('https://github.com/(.*)/(.*)/.*/.*/(.*)/(.*)')
+			var owner = document.getElementById('apple').value
+			var repo = document.getElementById('tomato').value
+			//var inputMatches = cleanInput.exec(input)
+			var adrRootUrl = 'https://api.github.com/repos/'+ owner + '/' + repo + '/contents/docs/adr'
 			var bodyLocations = [];
 			
 			function displayText () {
