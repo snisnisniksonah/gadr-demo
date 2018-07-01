@@ -3,7 +3,7 @@
 
 <head>
 	<meta charset="utf-8" />
-	<title>Test</title>
+	<title>GADR Demo</title>
 	<script src="https://code.jquery.com/jquery-3.3.1.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/vis/4.21.0/vis.min.js"></script>
 	
@@ -20,9 +20,21 @@
 </head>
 
 <body>
-	<input type="text" name="owner" id="apple" placeholder="JabRef | eclipse">
-	<input type="text" name="repo" id="tomato" placeholder="jabref | winery">
-	<button type="button" id="doit">Blubb</button>
+	<p>GADR Repository</p>
+	<input type="text" name="owner1" id="owner1" placeholder="adr">
+	<input type="text" name="repo1" id="repo1" placeholder="adr-java">
+	<p>MADR Repositories</p>
+	<input type="text" name="owner2" id="owner2" placeholder="JabRef">
+	<input type="text" name="repo2" id="repo2" placeholder="jabref">
+	<br>
+	<input type="text" name="owner3" id="owner3" placeholder="eclipse">
+	<input type="text" name="repo3" id="repo3" placeholder="winery">
+	<br>
+	<input type="text" name="owner4" id="owner4" placeholder="snisnisniksonah">
+	<input type="text" name="repo4" id="repo4" placeholder="gadr-demo">
+	<br>
+	<br>
+	<button type="button" id="doit">Fetch!</button>
 	<div id="adr-graph" hidden="hidden"></div>
 	<pre id="file-content"></pre>
 	
@@ -60,6 +72,7 @@
 				var result = [];
 				var linkStartPattern = new RegExp('^## Links');
 				var linkPattern = new RegExp ('^\\* (\\w+) \\[.*\\]\\((\\d+)-.*\\)')
+				var gadrPattern = new RegExp ('^\\* (GADR): <https://github.com/adr/gadr-java/blob/master/(gadr-java--build-tool)\\.md>')
 				var size = lines.length;
 				var banana = false;
 				var i = 0;
@@ -71,11 +84,18 @@
 					var linkLines = lines.slice(i);
 					for (var j = 0 ; j < linkLines.length ; j++) {
 						var match = linkPattern.exec(linkLines[j])
+						var gadrmatch = gadrPattern.exec(linkLines[j])
 						if (match) {
 							var link = {
 								relation: match[1],
 								target: parseInt(match[2], 10)
 							};
+							result.push(link)
+						}
+						if (gadrmatch) {
+							var link = {
+								gadr: gadrmatch[1]
+							};	
 							result.push(link)
 						}
 					}
@@ -92,8 +112,8 @@
 			//https://github.com/adr/madr/tree/master/docs/adr
 			//var adrRootUrl = 'https://api.github.com/repos/adr/madr/contents/docs/adr';
 			//var cleanInput = new RegExp ('https://github.com/(.*)/(.*)/.*/.*/(.*)/(.*)')
-			var owner = document.getElementById('apple').value
-			var repo = document.getElementById('tomato').value
+			var owner = document.getElementById('owner2').value
+			var repo = document.getElementById('repo2').value
 			//var inputMatches = cleanInput.exec(input)
 			var adrRootUrl = 'https://api.github.com/repos/'+ owner + '/' + repo + '/contents/docs/adr'
 			var bodyLocations = [];
@@ -105,11 +125,20 @@
 					var adr = adrs[k];
 					displayText += 'Id: ' + adr.id + '\n';
 					displayText += 'Title: ' + adr.title + '\n';
+					//this is not pretty, but it works
 					if (adr.links.length > 0) {
 						displayText += 'Links: \n'
 						for (var i = 0; i < adr.links.length ; i++) {
 							var link = adr.links[i];
-							displayText += link.target + '=' + link.relation + '\n';
+							if (typeof link.target !== 'undefined') {
+							displayText += link.target ;
+							}
+							if (typeof link.relation !== 'undefined') {
+							displayText += link.relation +'\n';
+							}							
+							if (typeof link.gadr !== 'undefined') {
+							displayText += link.gadr + '\n';
+							}							
 						}
 					} else {
 						displayText += "No links" + '\n';
