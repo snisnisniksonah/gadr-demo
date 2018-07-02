@@ -13,28 +13,29 @@
       font: 10pt sans;
     }
     #adr-graph {
-      width: 800px;
-      height: 500px;
+      width: 1000px;
+      height: 1000px;
     }
   </style>
 </head>
 
 <body>
 	<p>GADR Repository</p>
-	<input type="text" name="owner1" id="owner1" placeholder="adr">
-	<input type="text" name="repo1" id="repo1" placeholder="adr-java">
+	<input type="text" name="owner1" id="owner1" placeholder="adr" value="adr">
+	<input type="text" name="repo1" id="repo1" placeholder="adr-java" value="adr-java">
 	<p>MADR Repositories</p>
-	<input type="text" name="owner2" id="owner2" placeholder="JabRef">
-	<input type="text" name="repo2" id="repo2" placeholder="jabref">
+	<input type="text" name="owner2" id="owner2" placeholder="JabRef" value="JabRef">
+	<input type="text" name="repo2" id="repo2" placeholder="jabref" value="jabref">
 	<br>
-	<input type="text" name="owner3" id="owner3" placeholder="eclipse">
-	<input type="text" name="repo3" id="repo3" placeholder="winery">
+	<input type="text" name="owner3" id="owner3" placeholder="eclipse" value="eclipse">
+	<input type="text" name="repo3" id="repo3" placeholder="winery" value="winery">
 	<br>
-	<input type="text" name="owner4" id="owner4" placeholder="snisnisniksonah">
-	<input type="text" name="repo4" id="repo4" placeholder="gadr-demo">
+	<input type="text" name="owner4" id="owner4" placeholder="snisnisniksonah" value="snisnisniksonah">
+	<input type="text" name="repo4" id="repo4" placeholder="gadr-demo" value="gadr-demo">
 	<br>
 	<br>
-	<button type="button" id="doit">Fetch!</button>
+	<button type="button" id="doit">Submit</button>
+	<p>Doubleclick node to view XADR</p>
 	<div id="adr-graph" hidden="hidden"></div>
 	<pre id="file-content"></pre>
 	
@@ -68,7 +69,7 @@
 				return result;
 			}
 			
-			function getAdrLinks(lines) {
+			function getAdrLinks(repoid, lines) {
 				var result = [];
 				var linkStartPattern = new RegExp('^## Links');
 				var linkPattern = new RegExp ('^\\* (\\w+) \\[.*\\]\\((\\d+)-.*\\)')
@@ -88,7 +89,7 @@
 						if (match) {
 							var link = {
 								relation: match[1],
-								target: parseInt(match[2], 10)
+								target: repoid + '.' + parseInt(match[2], 10)
 							};
 							result.push(link)
 						}
@@ -112,10 +113,23 @@
 			//https://github.com/adr/madr/tree/master/docs/adr
 			//var adrRootUrl = 'https://api.github.com/repos/adr/madr/contents/docs/adr';
 			//var cleanInput = new RegExp ('https://github.com/(.*)/(.*)/.*/.*/(.*)/(.*)')
-			var owner = document.getElementById('owner2').value
-			var repo = document.getElementById('repo2').value
-			//var inputMatches = cleanInput.exec(input)
-			var adrRootUrl = 'https://api.github.com/repos/'+ owner + '/' + repo + '/contents/docs/adr'
+			var owner1 = document.getElementById('owner1').value
+			var repo1 = document.getElementById('repo1').value
+			
+			var owner2 = document.getElementById('owner2').value
+			var repo2 = document.getElementById('repo2').value
+			var owner3 = document.getElementById('owner3').value
+			var repo3 = document.getElementById('repo3').value
+			var owner4 = document.getElementById('owner4').value
+			var repo4 = document.getElementById('repo4').value			
+			
+			var gadrRootUrl = 'https://api.github.com/repos/'+ owner1 + '/' + repo1 + '/contents/docs/adr'
+			var adrRootUrl = [];
+			for ( var z=2; z<=4; z++) {
+				if (eval("owner"+z) != "" && eval("repo"+z) != ""){
+				adrRootUrl.push('https://api.github.com/repos/'+ eval("owner"+z) + '/' + eval("repo"+z) + '/contents/docs/adr')
+				}
+			}	
 			var bodyLocations = [];
 			
 			function displayText () {
@@ -151,16 +165,49 @@
 			function renderGraph() {
 				var nodeData = [];
 				var edgeData = [];
-
+				var xoffset = 100;
+				var yoffset = 100;
+			
 				for (var i = 0; i < adrs.length; i++) {
 					var adr = adrs[i];
-					var node = {
-						id: adr.id,
-						label: adr.title,
-						shape: 'square',				
-						url: adr.url
-					};
+					if (i >= 1) { 
+					var prev = adrs[i-1];
+					var helper = adr.links.length;
+					} else {
+					var otherHelper = 0;
+					}
+					//var otherHelper = prev.links.length;
+					
+					var q = 0;	
+					if (adr.links.length > 0) {												
+						for (;q < helper; q++) {
+							var node = {
+								id: adr.id,
+								label: adr.title,
+								group: String(adr.id.split(".",1)),
+								shape: 'square',				
+								url: adr.url,
+								x: xoffset + 100 * q,
+								y: yoffset + 100 * i,
+								fixed: true		
+								};
+						}						
+						
+					} else {									
+						var node = {
+							id: adr.id,
+							label: adr.title,
+							group: String(adr.id.split(".",1)),
+							shape: 'square',				
+							url: adr.url,
+							x: xoffset,
+							y: yoffset + 100*i,
+							fixed: true						
+						};
+					}	
+					
 					nodeData.push(node);
+
 					if (adr.links) {
 						for (var k = 0; k < adr.links.length; k++) {
 							var link = adr.links[k];
@@ -169,11 +216,31 @@
 								to:	link.target,
 								label: link.relation
 							};
+							if (typeof link.target === 'undefined' && typeof link.relation === 'undefined'){
+								var edge ={
+								from: adr.id,
+								to: '4.0',
+								label: 'result of'
+								};
+							}
 							edgeData.push(edge);
 						}
 					}
 				}
-
+					var gadr = {
+						id: '4.0',
+						label: "Build Tool",
+						group: '4',
+						shape: 'square',				
+						url: "https://raw.githubusercontent.com/adr/gadr-java/master/gadr-java--build-tool.md",
+						x: -300,
+						y: 1400,
+						fixed: true						
+					};
+					
+					nodeData.push(gadr);			
+						
+				//var nodes = new vis.DataSet(nodeData.sort(SortByID));
 				var nodes = new vis.DataSet(nodeData);
 				var edges = new vis.DataSet(edgeData);
 				var container = document.getElementById('adr-graph');
@@ -181,11 +248,20 @@
 					nodes: nodes,
 					edges: edges
 				};
-				var options = {};
+				var options = {
+					layout: { randomSeed: 3},
+					groups: {
+						"0": {color: 'rgb(230, 46, 0)',},
+						"1": {color: 'rgb(0, 153, 255)'},
+						"2": {color: 'rgb(0, 204, 102)'},
+						"3": {color: 'rgb(255, 153, 0)'},
+						"4": {color: 'rgb(255, 102, 204)'}
+					}
+				};
 				var network = new vis.Network(container, data, options);
 				$( "#adr-graph" ).show();
 				
-				network.on("selectNode", function (params) {
+				network.on("doubleClick", function (params) {
 					if (params.nodes.length === 1) {
 						var node = nodes.get(params.nodes[0]);
 						window.open(node.url, '_blank');
@@ -196,20 +272,20 @@
 			function displayContents(size) {
 				return function() {
 					if (size == adrs.length ) {
-						displayText();
+						//displayText();
 						renderGraph();
 					}
 				};
 			}
 
-			function getSingleAdr(myUrl, callback) {
+			function getSingleAdr(myUrl, repoid, callback) {
 				var handleResponse = function(data) {
 					var result = {};
 					var dataLines = data.split('\n');
 					result.url = myUrl;
-					result.id = getAdrId(myUrl);
+					result.id = repoid + '.' + getAdrId(myUrl);
 					result.title = getAdrTitle(dataLines);
-					result.links = getAdrLinks(dataLines);
+					result.links = getAdrLinks(repoid, dataLines);
 					adrs.push(result);
 				};
 				$.ajax({
@@ -220,11 +296,22 @@
 				}).always(callback);
 			}
 			
-			function loadDocsContent () {
-				for (var l = 0; l < bodyLocations.length; l++) {
-					var callback = displayContents(bodyLocations.length);
-					getSingleAdr(bodyLocations[l], callback);
-				}
+			function loadDocsContent (repos) {
+				return function() {
+					if (repos == bodyLocations.length ) {
+						var expected = 0;
+						for ( var n = 0; n < bodyLocations.length; n++) {
+							expected += bodyLocations[n].length;
+						}
+						for ( var m = 0; m < bodyLocations.length; m++) {
+							var reposadrs = bodyLocations[m];
+							for (var l = 0; l < reposadrs.length; l++) {
+								var callback = displayContents(expected);
+								getSingleAdr(reposadrs[l], m, callback);
+							}
+						}
+					}
+				};
 			}
 			
 			function loadAdrList () {
@@ -238,16 +325,19 @@
 							}
 						}
 					}
-					bodyLocations = result;
+					bodyLocations.push(result);
 				};
 				var handleError = function() {console.log("sad panda");};
+				var doneHandler = loadDocsContent (adrRootUrl.length);
+				for (i=0; i < adrRootUrl.length; i++) {				
 				$.ajax({
-					url: adrRootUrl,
+					url: adrRootUrl[i],
 					type: 'get',
 					contentType: 'application/vnd.github.v3.raw+json; charset=UTF-8',
 					dataType: 'json',
 					success: handleResponse
-				}).done(loadDocsContent).fail(handleError);
+				}).done(doneHandler).fail(handleError);
+				}
 			
 			}
 			
