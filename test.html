@@ -180,7 +180,6 @@
 				var node = {
 					id: adr.id,
 					label: adr.title,
-					title: adr.title,
 					group: String(adr.repoid),
 					shape: 'square',				
 					url: adr.url,
@@ -225,7 +224,8 @@
 						title: "Build Tool",
 						group: '4',
 						shape: 'square',				
-						url: "https://raw.githubusercontent.com/adr/gadr-java/master/gadr-java--build-tool.md",
+						//url: "https://raw.githubusercontent.com/adr/gadr-java/master/gadr-java--build-tool.md",
+						url: "https://github.com/adr/gadr-java/blob/master/gadr-java--build-tool.md",
 						x: 0,
 						y: 0,
 						fixed: true						
@@ -241,9 +241,7 @@
 					nodes: nodes,
 					edges: edges
 				};
-				var options = {
-					//layout: { randomSeed: 3},
-					interaction:{hover:true},				
+				var options = {				
 					groups: {
 						"0": {color: 'rgb(230, 46, 0)',},
 						"1": {color: 'rgb(0, 153, 255)'},
@@ -254,10 +252,7 @@
 				};
 				var network = new vis.Network(container, data, options);
 				$( "#adr-graph" ).show();
-				
-				    network.on("hoverNode", function (params) {
-       //console.log('hoverNode Event:', params);
-    });
+	
 				network.on("doubleClick", function (params) {
 					if (params.nodes.length === 1) {
 						var node = nodes.get(params.nodes[0]);
@@ -319,7 +314,7 @@
 					if (data) {
 						for ( var i = 0; i < data.length ; i++) {
 							if (data[i] && data[i].download_url && idPattern.test(data[i].download_url)) {
-								result.push(data[i].html_url);
+								result.push(data[i].download_url);
 							}
 						}
 					}
@@ -331,7 +326,7 @@
 				$.ajax({
 					url: adrRootUrl[i],
 					type: 'get',
-					contentType: 'application/vnd.github.v3.raw+json; charset=UTF-8',
+					contentType: 'application/vnd.github.VERSION.raw+json; charset=UTF-8',
 					dataType: 'json',
 					success: handleResponse
 				}).done(doneHandler).fail(handleError);
