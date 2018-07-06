@@ -189,9 +189,10 @@
 				};
 				yoffset += 100;
 				nodeData.push(node);
+				if (adr.links) {
 				}
 				
-					if (adr.links) {
+
 						for (var k = 0; k < adr.links.length; k++) {
 							var link = adr.links[k];
 							var edge = {
@@ -221,7 +222,7 @@
 				var gadr = {
 						id: '4.0',
 						label: "Build Tool",
-						title: "Build Tool",
+						//title: "Build Tool",
 						group: '4',
 						shape: 'square',				
 						//url: "https://raw.githubusercontent.com/adr/gadr-java/master/gadr-java--build-tool.md",
