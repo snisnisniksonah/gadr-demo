@@ -24,14 +24,18 @@
 	<input type="text" name="owner1" id="owner1" placeholder="adr" value="adr">
 	<input type="text" name="repo1" id="repo1" placeholder="adr-java" value="adr-java">
 	<p>MADR Repositories</p>
-	<input type="text" name="owner2" id="owner2" placeholder="JabRef" value="JabRef">
-	<input type="text" name="repo2" id="repo2" placeholder="jabref" value="jabref">
+	<form id="repos">
+	<input type="text" name="owner[]" value="JabRef">
+	<input type="text" name="repo[]" value="jabref">
 	<br>
-	<input type="text" name="owner3" id="owner3" placeholder="eclipse" value="eclipse">
-	<input type="text" name="repo3" id="repo3" placeholder="winery" value="winery">
+	<input type="text" name="owner[]" value="eclipse">
+	<input type="text" name="repo[]" value="winery">
 	<br>
-	<input type="text" name="owner4" id="owner4" placeholder="snisnisniksonah" value="snisnisniksonah">
-	<input type="text" name="repo4" id="repo4" placeholder="gadr-demo" value="gadr-demo">
+	<input type="text" name="owner[]" value="snisnisniksonah">
+	<input type="text" name="repo[]" value="gadr-demo">				
+	</form>
+	
+
 	<br>
 	<br>
 	<button type="button" id="doit">Submit</button>
@@ -53,9 +57,7 @@
 		curl -H "Accept: application/vnd.github.v3.raw+json" <url>
 		e.g.:
 		curl -H "Accept: application/vnd.github.v3.raw+json" https://raw.githubusercontent.com/adr/madr/master/docs/adr/0011-use-asterisk-as-list-marker.md
-	*/
-	
-	
+	*/		
 	
 		function readUrl(e) {
 			var adrs = [];
@@ -109,6 +111,7 @@
 				var match = idPattern.exec(url);
 				return match && match[1] && parseInt(match[1], 10) || 0;
 			}
+			
 			//TODO: RootUrl -> cleaned/mapped Input from Input field
 			//https://github.com/adr/madr/tree/master/docs/adr
 			//var adrRootUrl = 'https://api.github.com/repos/adr/madr/contents/docs/adr';
@@ -116,20 +119,19 @@
 			var owner1 = document.getElementById('owner1').value
 			var repo1 = document.getElementById('repo1').value
 			
-			var owner2 = document.getElementById('owner2').value
-			var repo2 = document.getElementById('repo2').value
-			var owner3 = document.getElementById('owner3').value
-			var repo3 = document.getElementById('repo3').value
-			var owner4 = document.getElementById('owner4').value
-			var repo4 = document.getElementById('repo4').value			
+
+	
 			
-			var gadrRootUrl = 'https://api.github.com/repos/'+ owner1 + '/' + repo1 + '/contents/docs/adr'
+			var gadrRootUrl = 'https://api.github.com/repos/'+ owner1 + '/' + repo1
+			var adrRootUrlCollection = document.forms.repos;
+			var adrRootUrlOwner = document.getElementById("repos").elements["owner[]"];
+			var adrRootUrlRepo = document.getElementById("repos").elements["repo[]"];
 			var adrRootUrl = [];
-			for ( var z=2; z<=4; z++) {
-				if (eval("owner"+z) != "" && eval("repo"+z) != ""){
-				adrRootUrl.push('https://api.github.com/repos/'+ eval("owner"+z) + '/' + eval("repo"+z) + '/contents/docs/adr')
-				}
-			}	
+			var hippo = adrRootUrlCollection.length/2;
+			for (var i = 0; i < hippo; i++) {
+				adrRootUrl.push('https://api.github.com/repos/'+ adrRootUrlOwner[i].value + '/' + adrRootUrlRepo[i].value + '/contents/docs/adr')
+			}
+
 			var bodyLocations = [];
 			
 			function displayText () {
@@ -166,48 +168,30 @@
 				var nodeData = [];
 				var edgeData = [];
 				var xoffset = 100;
-				var yoffset = 100;
-			
+				var numberOfRepos = hippo;
+				var eggplant = 0;
+				
+				for (var l = 0; l < numberOfRepos; l++) {
+				var yoffset = 0;				
 				for (var i = 0; i < adrs.length; i++) {
-					var adr = adrs[i];
-					if (i >= 1) { 
-					var prev = adrs[i-1];
-					var helper = adr.links.length;
-					} else {
-					var otherHelper = 0;
-					}
-					//var otherHelper = prev.links.length;
-					
-					var q = 0;	
-					if (adr.links.length > 0) {												
-						for (;q < helper; q++) {
-							var node = {
-								id: adr.id,
-								label: adr.title,
-								group: String(adr.id.split(".",1)),
-								shape: 'square',				
-								url: adr.url,
-								x: xoffset + 100 * q,
-								y: yoffset + 100 * i,
-								fixed: true		
-								};
-						}						
-						
-					} else {									
-						var node = {
-							id: adr.id,
-							label: adr.title,
-							group: String(adr.id.split(".",1)),
-							shape: 'square',				
-							url: adr.url,
-							x: xoffset,
-							y: yoffset + 100*i,
-							fixed: true						
-						};
-					}	
-					
-					nodeData.push(node);
-
+				var adr = adrs[i];
+				
+				if (adr.repoid == eggplant) {
+				var node = {
+					id: adr.id,
+					label: adr.title,
+					title: adr.title,
+					group: String(adr.repoid),
+					shape: 'square',				
+					url: adr.url,
+					x: xoffset,
+					y: yoffset,
+					fixed: true
+				};
+				yoffset += 100;
+				nodeData.push(node);
+				}
+				
 					if (adr.links) {
 						for (var k = 0; k < adr.links.length; k++) {
 							var link = adr.links[k];
@@ -216,25 +200,34 @@
 								to:	link.target,
 								label: link.relation
 							};
-							if (typeof link.target === 'undefined' && typeof link.relation === 'undefined'){
+							if (typeof link.gadr !== 'undefined'){
 								var edge ={
 								from: adr.id,
 								to: '4.0',
 								label: 'result of'
 								};
 							}
+							//console.log(!edgeData.includes(edge));
 							edgeData.push(edge);
-						}
-					}
+							
+							}
+
+							}
+					}		
+				xoffset += 100;
+				eggplant++;					
+				
+				
 				}
-					var gadr = {
+				var gadr = {
 						id: '4.0',
 						label: "Build Tool",
+						title: "Build Tool",
 						group: '4',
 						shape: 'square',				
 						url: "https://raw.githubusercontent.com/adr/gadr-java/master/gadr-java--build-tool.md",
-						x: -300,
-						y: 1400,
+						x: 0,
+						y: 0,
 						fixed: true						
 					};
 					
@@ -249,7 +242,8 @@
 					edges: edges
 				};
 				var options = {
-					layout: { randomSeed: 3},
+					//layout: { randomSeed: 3},
+					interaction:{hover:true},				
 					groups: {
 						"0": {color: 'rgb(230, 46, 0)',},
 						"1": {color: 'rgb(0, 153, 255)'},
@@ -261,6 +255,9 @@
 				var network = new vis.Network(container, data, options);
 				$( "#adr-graph" ).show();
 				
+				    network.on("hoverNode", function (params) {
+       //console.log('hoverNode Event:', params);
+    });
 				network.on("doubleClick", function (params) {
 					if (params.nodes.length === 1) {
 						var node = nodes.get(params.nodes[0]);
@@ -268,7 +265,7 @@
 					}
 					});
 			}
-			
+		
 			function displayContents(size) {
 				return function() {
 					if (size == adrs.length ) {
@@ -284,6 +281,7 @@
 					var dataLines = data.split('\n');
 					result.url = myUrl;
 					result.id = repoid + '.' + getAdrId(myUrl);
+					result.repoid = repoid;
 					result.title = getAdrTitle(dataLines);
 					result.links = getAdrLinks(repoid, dataLines);
 					adrs.push(result);
@@ -321,7 +319,7 @@
 					if (data) {
 						for ( var i = 0; i < data.length ; i++) {
 							if (data[i] && data[i].download_url && idPattern.test(data[i].download_url)) {
-								result.push(data[i].download_url);
+								result.push(data[i].html_url);
 							}
 						}
 					}
