@@ -2,13 +2,14 @@
 <html>
 
 <head>
-	<meta charset="utf-8" />
-	<title>GADR Demo</title>
-	<script src="https://code.jquery.com/jquery-3.3.1.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
-	<script src="https://cdnjs.cloudflare.com/ajax/libs/vis/4.21.0/vis.min.js"></script>
-	
-	<link href="https://cdnjs.cloudflare.com/ajax/libs/vis/4.21.0/vis.min.css" rel="stylesheet" type="text/css" />
-	<style type="text/css">
+    <meta charset="utf-8"/>
+    <title>GADR Demo</title>
+    <script src="https://code.jquery.com/jquery-3.3.1.min.js"
+            integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/vis/4.21.0/vis.min.js"></script>
+
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/vis/4.21.0/vis.min.css" rel="stylesheet" type="text/css"/>
+    <style type="text/css">
     body {
       font: 10pt sans;
     }
@@ -16,35 +17,36 @@
       width: 1000px;
       height: 1000px;
     }
-  </style>
+
+    </style>
 </head>
 
 <body>
-	<p>GADR Repository</p>
-	<input type="text" name="owner1" id="owner1" placeholder="adr" value="adr">
-	<input type="text" name="repo1" id="repo1" placeholder="adr-java" value="adr-java">
-	<p>MADR Repositories</p>
-	<form id="repos">
-	<input type="text" name="owner[]" value="JabRef">
-	<input type="text" name="repo[]" value="jabref">
-	<br>
-	<input type="text" name="owner[]" value="eclipse">
-	<input type="text" name="repo[]" value="winery">
-	<br>
-	<input type="text" name="owner[]" value="snisnisniksonah">
-	<input type="text" name="repo[]" value="gadr-demo">				
-	</form>
-	
+<p>GADR Repository</p>
+<input type="text" name="owner1" id="owner1" placeholder="adr" value="adr">
+<input type="text" name="repo1" id="repo1" placeholder="adr-java" value="gadr-java">
+<p>MADR Repositories</p>
+<form id="repos">
+    <input type="text" name="owner[]" value="JabRef">
+    <input type="text" name="repo[]" value="jabref">
+    <br>
+    <input type="text" name="owner[]" value="eclipse">
+    <input type="text" name="repo[]" value="winery">
+    <br>
+    <input type="text" name="owner[]" value="snisnisniksonah">
+    <input type="text" name="repo[]" value="gadr-demo">
+</form>
 
-	<br>
-	<br>
-	<button type="button" id="doit">Submit</button>
-	<p>Doubleclick node to view XADR</p>
-	<div id="adr-graph" hidden="hidden"></div>
-	<pre id="file-content"></pre>
-	
 
-	<script type="text/javascript">
+<br>
+<br>
+<button type="button" id="doit">Submit</button>
+<p>Doubleclick node to view XADR</p>
+<div id="adr-graph" hidden="hidden"></div>
+<pre id="file-content"></pre>
+
+
+<script type="text/javascript">
 	
 	/* 
 	winery: https://github.com/eclipse/winery/tree/master/docs/adr
@@ -72,10 +74,10 @@
 			}
 			
 			function getAdrLinks(repoid, lines) {
-				var result = [];
+				var adrLinks = [];
 				var linkStartPattern = new RegExp('^## Links');
 				var linkPattern = new RegExp ('^\\* (\\w+) \\[.*\\]\\((\\d+)-.*\\)')
-				var gadrPattern = new RegExp ('^\\* (GADR): <https://github.com/adr/gadr-java/blob/master/(gadr-java--build-tool)\\.md>')
+				var gadrPattern = new RegExp ('^\\* (GADR): .*')
 				var size = lines.length;
 				var banana = false;
 				var i = 0;
@@ -93,17 +95,17 @@
 								relation: match[1],
 								target: repoid + '.' + parseInt(match[2], 10)
 							};
-							result.push(link)
+							adrLinks.push(link)
 						}
 						if (gadrmatch) {
 							var link = {
 								gadr: gadrmatch[1]
 							};	
-							result.push(link)
+							adrLinks.push(link)
 						}
 					}
 				}
-				return result;
+				return adrLinks;
 			}
 			
 			function getAdrId(url) {
@@ -112,63 +114,25 @@
 				return match && match[1] && parseInt(match[1], 10) || 0;
 			}
 			
-			//TODO: RootUrl -> cleaned/mapped Input from Input field
-			//https://github.com/adr/madr/tree/master/docs/adr
-			//var adrRootUrl = 'https://api.github.com/repos/adr/madr/contents/docs/adr';
-			//var cleanInput = new RegExp ('https://github.com/(.*)/(.*)/.*/.*/(.*)/(.*)')
 			var owner1 = document.getElementById('owner1').value
 			var repo1 = document.getElementById('repo1').value
-			
-
-	
-			
 			var gadrRootUrl = 'https://api.github.com/repos/'+ owner1 + '/' + repo1
 			var adrRootUrlCollection = document.forms.repos;
 			var adrRootUrlOwner = document.getElementById("repos").elements["owner[]"];
 			var adrRootUrlRepo = document.getElementById("repos").elements["repo[]"];
 			var adrRootUrl = [];
-			var hippo = adrRootUrlCollection.length/2;
-			for (var i = 0; i < hippo; i++) {
+			var adjustedNumberOfRepos = adrRootUrlCollection.length/2;
+			for (var i = 0; i < adjustedNumberOfRepos; i++) {
 				adrRootUrl.push('https://api.github.com/repos/'+ adrRootUrlOwner[i].value + '/' + adrRootUrlRepo[i].value + '/contents/docs/adr')
 			}
-
+			adrRootUrl.push(gadrRootUrl);
 			var bodyLocations = [];
-			
-			function displayText () {
-				var element = document.getElementById('file-content');
-				var displayText = "";
-				for (var k=0; k< adrs.length; k++) {
-					var adr = adrs[k];
-					displayText += 'Id: ' + adr.id + '\n';
-					displayText += 'Title: ' + adr.title + '\n';
-					//this is not pretty, but it works
-					if (adr.links.length > 0) {
-						displayText += 'Links: \n'
-						for (var i = 0; i < adr.links.length ; i++) {
-							var link = adr.links[i];
-							if (typeof link.target !== 'undefined') {
-							displayText += link.target ;
-							}
-							if (typeof link.relation !== 'undefined') {
-							displayText += link.relation +'\n';
-							}							
-							if (typeof link.gadr !== 'undefined') {
-							displayText += link.gadr + '\n';
-							}							
-						}
-					} else {
-						displayText += "No links" + '\n';
-					}
-					displayText += '\n';
-				}
-				element.textContent = displayText;
-			}
 			
 			function renderGraph() {
 				var nodeData = [];
 				var edgeData = [];
 				var xoffset = 100;
-				var numberOfRepos = hippo;
+				var numberOfRepos = adjustedNumberOfRepos+1;
 				var eggplant = 0;
 				
 				for (var l = 0; l < numberOfRepos; l++) {
@@ -219,20 +183,7 @@
 				
 				
 				}
-				var gadr = {
-						id: '4.0',
-						label: "Build Tool",
-						//title: "Build Tool",
-						group: '4',
-						shape: 'square',				
-						//url: "https://raw.githubusercontent.com/adr/gadr-java/master/gadr-java--build-tool.md",
-						url: "https://github.com/adr/gadr-java/blob/master/gadr-java--build-tool.md",
-						x: 0,
-						y: 0,
-						fixed: true						
-					};
-					
-					nodeData.push(gadr);			
+	
 						
 				//var nodes = new vis.DataSet(nodeData.sort(SortByID));
 				var nodes = new vis.DataSet(nodeData);
@@ -343,7 +294,8 @@
 
 		document.getElementById('doit')
 			.addEventListener('click', readUrl, false);
-	</script>
+
+</script>
 </body>
 
 </html>
