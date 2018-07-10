@@ -14,8 +14,8 @@
       font: 10pt sans;
     }
     #adr-graph {
-      width: 1000px;
-      height: 1000px;
+      width: 500px;
+      height: 500px;
     }
 
     </style>
@@ -108,79 +108,140 @@
 				return adrLinks;
 			}
 			
-			function getAdrId(url) {
+			function getAdrId(url, type) {
 				var idPattern = new RegExp('.*/(\\d+)-.*md$');
 				var match = idPattern.exec(url);
-				return match && match[1] && parseInt(match[1], 10) || 0;
+				if (type == 'adr') {
+					return match && match[1] && parseInt(match[1], 10) || 0;
+				} else if (type == 'gadr') {
+					return url;
+				} else {
+					console.log('sad bear');
+					return -1;
+				}
 			}
 			
 			var owner1 = document.getElementById('owner1').value
 			var repo1 = document.getElementById('repo1').value
-			var gadrRootUrl = 'https://api.github.com/repos/'+ owner1 + '/' + repo1
+			var gadrRootUrl = 'https://api.github.com/repos/'+ owner1 + '/' + repo1 + '/contents'
 			var adrRootUrlCollection = document.forms.repos;
 			var adrRootUrlOwner = document.getElementById("repos").elements["owner[]"];
 			var adrRootUrlRepo = document.getElementById("repos").elements["repo[]"];
 			var adrRootUrl = [];
 			var adjustedNumberOfRepos = adrRootUrlCollection.length/2;
 			for (var i = 0; i < adjustedNumberOfRepos; i++) {
-				adrRootUrl.push('https://api.github.com/repos/'+ adrRootUrlOwner[i].value + '/' + adrRootUrlRepo[i].value + '/contents/docs/adr')
+				adrRootUrl.push({
+					url: 'https://api.github.com/repos/'+ adrRootUrlOwner[i].value + '/' + adrRootUrlRepo[i].value + '/contents/docs/adr',
+					type: 'adr'}
+				)
 			}
-			adrRootUrl.push(gadrRootUrl);
+			adrRootUrl.push({
+				url: gadrRootUrl,
+				type:'gadr'}
+			);
 			var bodyLocations = [];
 			
 			function renderGraph() {
 				var nodeData = [];
 				var edgeData = [];
-				var xoffset = 100;
+				var xoffset = 400;
 				var numberOfRepos = adjustedNumberOfRepos+1;
 				var eggplant = 0;
-				
+				var getRepoID = false;				
+				var numberOfGADRRepos = 0;
+				var numberOfADRRepos = 0;
+
+				for (var m = 0; m < adrRootUrl.length; m++) {
+					if (adrRootUrl[m].type == 'adr' ) {
+						numberOfADRRepos++;
+					}else if (adrRootUrl[m].type == 'gadr' ) {
+						numberOfGADRRepos++;
+						var GadrRepoId = m;
+					}
+				}
+		
 				for (var l = 0; l < numberOfRepos; l++) {
-				var yoffset = 0;				
+				var yoffset = 0;
+				var isGadrRepo = false;
+				var yoffsetmax = 0;
+				var containsGadr = false;
 				for (var i = 0; i < adrs.length; i++) {
 				var adr = adrs[i];
+				var belongsToGadr = false;
+			if (adr.repoid == eggplant) {
+				isGadrRepo = isGadrRepo || (adr.type == 'gadr');
 				
-				if (adr.repoid == eggplant) {
-				var node = {
+				for (var k = 0; k < adr.links.length; k++) {
+					var link = adr.links[k];
+					var edge = {
+						from: adr.id,
+						to:	link.target,
+						label: link.relation
+					};
+					if (typeof link.gadr !== 'undefined'){
+						var edge ={
+						from: adr.id,
+						to: String(GadrRepoId + '.https://raw.githubusercontent.com/adr/gadr-java/master/gadr-java--build-tool.md'),
+						label: ' '
+						};
+						belongsToGadr = true;
+						containsGadr = true;
+					}
+					edgeData.push(edge);
+					
+				}
+				if(belongsToGadr) {
+					var node = {
 					id: adr.id,
 					label: adr.title,
 					group: String(adr.repoid),
-					shape: 'square',				
+					shape: 'square',
 					url: adr.url,
-					x: xoffset,
-					y: yoffset,
+					x: (isGadrRepo ? 100 : xoffset),
+					y: 0,
 					fixed: true
 				};
 				yoffset += 100;
 				nodeData.push(node);
-				if (adr.links) {
+				} else if (containsGadr){
+				var node = {
+					id: adr.id,
+					label: adr.title,
+					group: String(adr.repoid),
+					shape: 'square',
+					url: adr.url,
+					x: (isGadrRepo ? 200 : xoffset),
+					y: (isGadrRepo ? 0 : yoffset),
+					fixed: true
+				};
+				yoffset += 100;
+				nodeData.push(node);				
+				} else {
+					var node = {
+					id: adr.id,
+					label: adr.title,
+					group: String(adr.repoid),
+					shape: 'square',
+					url: adr.url,
+					x: (isGadrRepo ? 200 : xoffset),
+					y: (isGadrRepo ? 0 : yoffset+100),
+					fixed: true
+				};
+				yoffset += 100;
+				nodeData.push(node);	
 				}
-				
 
-						for (var k = 0; k < adr.links.length; k++) {
-							var link = adr.links[k];
-							var edge = {
-								from: adr.id,
-								to:	link.target,
-								label: link.relation
-							};
-							if (typeof link.gadr !== 'undefined'){
-								var edge ={
-								from: adr.id,
-								to: '4.0',
-								label: 'result of'
-								};
-							}
-							//console.log(!edgeData.includes(edge));
-							edgeData.push(edge);
-							
-							}
 
 							}
-					}		
-				xoffset += 100;
+					}
+
+				if (!isGadrRepo) {
+					xoffset += 200;
+				}
 				eggplant++;					
-				
+								if (yoffset > yoffsetmax) {
+				yoffsetmax = yoffset+100;
+				}
 				
 				}
 	
@@ -222,15 +283,16 @@
 				};
 			}
 
-			function getSingleAdr(myUrl, repoid, callback) {
+			function getSingleAdr(myUrl, repoid, linkUrl, type, callback) {
 				var handleResponse = function(data) {
 					var result = {};
 					var dataLines = data.split('\n');
-					result.url = myUrl;
-					result.id = repoid + '.' + getAdrId(myUrl);
+					result.url = linkUrl;
+					result.id = repoid + '.' + getAdrId(myUrl, type);
 					result.repoid = repoid;
 					result.title = getAdrTitle(dataLines);
 					result.links = getAdrLinks(repoid, dataLines);
+					result.type = type;
 					adrs.push(result);
 				};
 				$.ajax({
@@ -252,7 +314,7 @@
 							var reposadrs = bodyLocations[m];
 							for (var l = 0; l < reposadrs.length; l++) {
 								var callback = displayContents(expected);
-								getSingleAdr(reposadrs[l], m, callback);
+								getSingleAdr(reposadrs[l].url, m, reposadrs[l].linkTarget, reposadrs[l].type, callback);
 							}
 						}
 					}
@@ -260,27 +322,36 @@
 			}
 			
 			function loadAdrList () {
-				var handleResponse = function(data) {
-					var idPattern = new RegExp('.*/(\\d+)-.*');
-					var result = [];
-					if (data) {
-						for ( var i = 0; i < data.length ; i++) {
-							if (data[i] && data[i].download_url && idPattern.test(data[i].download_url)) {
-								result.push(data[i].download_url);
+				function handleResponse(type) {
+					return function(data) {
+						var idPattern = new RegExp('.*/(\\d+)-.*');
+						var GADRPattern = new RegExp('.*/master/(gadr-java).*');
+						var result = [];
+						if (data  && type == 'adr') {
+							for ( var i = 0; i < data.length ; i++) {
+								if (data[i] && data[i].download_url && idPattern.test(data[i].download_url)) {
+									result.push({url: data[i].download_url, type: 'adr', linkTarget: data[i].html_url});
+								}
+							}
+						} else if (data && type  == 'gadr') {
+							for ( var j = 0; j < data.length ; j++) {
+								if (data[j] && data[j].download_url && GADRPattern.test(data[j].download_url)) {
+									result.push({url: data[j].download_url, type: 'gadr', linkTarget: data[j].html_url});
+								}
 							}
 						}
-					}
-					bodyLocations.push(result);
+						bodyLocations.push(result);
+					};
 				};
 				var handleError = function() {console.log("sad panda");};
 				var doneHandler = loadDocsContent (adrRootUrl.length);
 				for (i=0; i < adrRootUrl.length; i++) {				
 				$.ajax({
-					url: adrRootUrl[i],
+					url: adrRootUrl[i].url,
 					type: 'get',
 					contentType: 'application/vnd.github.VERSION.raw+json; charset=UTF-8',
 					dataType: 'json',
-					success: handleResponse
+					success: handleResponse(adrRootUrl[i].type)
 				}).done(doneHandler).fail(handleError);
 				}
 			
