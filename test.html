@@ -146,18 +146,8 @@
 			
 
 			function renderGraph() {
-				adrs.sort(function (a, b) {
-					return a.repoid - b.repoid;
-				});
-				var nodeData = [];
-				var edgeData = [];
-				var xoffset = 400;
-				var numberOfRepos = adjustedNumberOfRepos + 1;
-				var eggplant = 0;
-				var getRepoID = false;
 				var numberOfGADRRepos = 0;
-				var numberOfADRRepos = 0;
-
+				var numberOfADRRepos = 0;			
 				for (var m = 0; m < adrRootUrl.length; m++) {
 					if (adrRootUrl[m].type == 'adr') {
 						numberOfADRRepos++;
@@ -165,7 +155,20 @@
 						numberOfGADRRepos++;
 						var GadrRepoId = m;
 					}
-				}
+				}			
+			
+				adrs.sort(function (a, b) {
+					return a.repoid - b.repoid;
+				});
+				var nodeData = [];
+				var edgeData = [];
+				var xoffset = 400;
+				var yoffset= 0;
+				var numberOfRepos = adrRootUrl.length;
+				var eggplant = 0;
+				var getRepoID = false;
+				var regex = RegExp('snisnisniksonah');
+				var demoRepo = false;
 
 				for (var l = 0; l < numberOfRepos; l++) {
 					var yoffset = 0;
@@ -176,6 +179,7 @@
 						var adr = adrs[i];
 						var belongsToGadr = false;
 						if (adr.repoid == eggplant) {
+							demoRepo = demoRepo || regex.test(adr.url);
 							isGadrRepo = isGadrRepo || (adr.type == 'gadr');
 
 							for (var k = 0; k < adr.links.length; k++) {
@@ -219,6 +223,19 @@
 									url: adr.url,
 									x: (isGadrRepo ? 200 : xoffset),
 									y: (isGadrRepo ? 0 : yoffset),
+									fixed: true
+								};
+								yoffset += 100;
+								nodeData.push(node);
+							} else if (demoRepo) {
+								var node = {
+									id: adr.id,
+									label: adr.title,
+									group: String(adr.repoid),
+									shape: 'square',
+									url: adr.url,
+									x: (isGadrRepo ? 200 : xoffset),
+									y: (isGadrRepo ? 0 : yoffset + 2800),
 									fixed: true
 								};
 								yoffset += 100;
