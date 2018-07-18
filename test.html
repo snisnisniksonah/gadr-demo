@@ -142,8 +142,13 @@
 			}
 			);
 			var bodyLocations = [];
+			
+			
 
 			function renderGraph() {
+				adrs.sort(function (a, b) {
+					return a.repoid - b.repoid;
+				});
 				var nodeData = [];
 				var edgeData = [];
 				var xoffset = 400;
@@ -283,6 +288,14 @@
 						renderGraph();
 					}
 				};
+			}
+			
+			function compare(a,b) {
+				if (a.repoid < b.repoid)
+					return -1;
+				if (a.repoid > b.repoid)
+					return 1;
+				return 0;
 			}
 
 			function getSingleAdr(myUrl, repoid, linkUrl, type, callback) {
