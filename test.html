@@ -35,6 +35,9 @@
 	<form id="gadrRepos">
 		<input type="text" name="gadrOwner[]" placeholder="adr" value="adr">
 		<input type="text" name="gadrRepo[]" placeholder="adr-java" value="gadr-java">
+		<br>
+		<input type="text" name="gadrOwner[]" placeholder="adr" value="snisnisniksonah">
+		<input type="text" name="gadrRepo[]" placeholder="adr-java" value="filename-convention">
 	</form>
 	<br>
 	<button onclick="addGadrRepo()">Add</button>
@@ -417,7 +420,7 @@
 
 			function loadAdrList() {
 				var idPattern = new RegExp('.*/(\\d+)-.*');
-				var GADRPattern = new RegExp('.*/master/(gadr-java).*');
+				var GADRPattern = new RegExp('.*/master/(gadr).*');
 				function handleResponse(destination, pattern) {
 					return function (data) {
 						var result = [];
