@@ -36,8 +36,8 @@
 		<input type="text" name="gadrOwner[]" placeholder="adr" value="adr">
 		<input type="text" name="gadrRepo[]" placeholder="adr-java" value="gadr-java">
 		<br>
-		<input type="text" name="gadrOwner[]" placeholder="adr" value="adr">
-		<input type="text" name="gadrRepo[]" placeholder="adr-java" value="gadr-misc">
+		<input type="text" name="gadrOwner[]" placeholder="adr" value="snisnisniksonah">
+		<input type="text" name="gadrRepo[]" placeholder="adr-java" value="filename-convention">
 	</form>
 	<br>
 	<button onclick="addGadrRepo()">Add</button>
@@ -265,7 +265,6 @@
 
 				xoffset = 200;
 				for (l = 0; l < numberOfRepos; l++) {
-					yoffset = maxGadrY;
 					var wrote = false;
 					for (var j = 0; j < adrs.length; j++) {
 						var currentAdr = adrs[j];
@@ -299,7 +298,6 @@
 				xoffset = maxX;
 				for (l = 0; l < numberOfRepos; l++) {
 					var wrote = false;
-					yoffset = maxY;
 					for (var j = 0; j < adrs.length; j++) {
 						var currentAdr = adrs[j];
 						if (currentAdr.repoid == l
